@@ -1,0 +1,166 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark mode as default */
+    --background: 180 13% 6%;
+    --foreground: 150 14% 97%;
+
+    --card: 180 20% 4%;
+    --card-foreground: 165 24% 93%;
+
+    --popover: 180 20% 4%;
+    --popover-foreground: 165 24% 93%;
+
+    --primary: 160 100% 45%;
+    --primary-foreground: 157 100% 5%;
+
+    --secondary: 173 19% 9%;
+    --secondary-foreground: 168 20% 83%;
+
+    --muted: 168 33% 6%;
+    --muted-foreground: 171 10% 53%;
+
+    --accent: 173 19% 9%;
+    --accent-foreground: 160 100% 45%;
+
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 180 24% 13%;
+    --input: 180 23% 15%;
+    --ring: 163 100% 20%;
+
+    --radius: 0.75rem;
+
+    /* Brand gradient */
+    --gradient-start: #00e599;
+    --gradient-end: #00b87a;
+
+    --font-outfit: "Sora", system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-outfit), system-ui, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(99, 113, 241, 0.3);
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism card */
+  .glass {
+    @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+  }
+
+  .glass-dark {
+    background: #0a1412;
+    border: 1px solid #1e3030;
+  }
+
+  /* Brand gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #00e599 0%, #00b87a 100%);
+  }
+
+  /* Brand gradient bg */
+  .gradient-bg {
+    background: linear-gradient(135deg, #00e599 0%, #00b87a 100%);
+  }
+
+  .gradient-bg-subtle {
+    background: linear-gradient(135deg, rgba(0, 229, 153, 0.1) 0%, rgba(0, 184, 122, 0.1) 100%);
+  }
+
+  /* Glow effects */
+  .glow-brand {
+    box-shadow: 0 0 30px rgba(0, 229, 153, 0.3), 0 0 60px rgba(0, 229, 153, 0.1);
+  }
+
+  .glow-brand-sm {
+    box-shadow: 0 0 15px rgba(0, 229, 153, 0.2);
+  }
+
+  /* Shimmer loading */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* Status dots */
+  .status-dot-active {
+    @apply h-2 w-2 rounded-full bg-emerald-400;
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+  }
+
+  .status-dot-paused {
+    @apply h-2 w-2 rounded-full bg-amber-400;
+  }
+
+  .status-dot-draft {
+    @apply h-2 w-2 rounded-full bg-slate-400;
+  }
+}
+
+@layer base {
+  .theme-luxury {
+    /* Match login page palette */
+    --bg-base: #080c0c;
+    --bg-surface: #0d1111;
+    --bg-elevated: #131c1b;
+
+    --accent-primary: #00e599;
+    --accent-secondary: #00b87a;
+    --accent-gold: #f0c060;
+
+    --text-primary: #e8f0ee;
+    --text-secondary: #7a9490;
+    --text-muted: #3a5550;
+
+    --border-subtle: #1e3030;
+    --border-glow: rgba(0,229,153,0.3);
+
+    --glow-violet: 0 0 60px rgba(0,229,153,0.25);
+    --glow-cyan: 0 0 40px rgba(0,184,122,0.2);
+
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+  }
+}
