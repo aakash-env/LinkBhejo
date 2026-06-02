@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { verifyWebhookSignature } from "../../packages/utils/src/meta-signature";
-import { encryptToken, decryptToken } from "../../packages/db/src/crypto";
+import { verifyWebhookSignature } from "@linkbhejo/utils/meta-signature";
+import { encryptToken, decryptToken } from "@linkbhejo/db";
 import { createHmac } from "crypto";
 
 // Set up test encryption key

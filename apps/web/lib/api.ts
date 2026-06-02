@@ -43,7 +43,7 @@ export const accountsApi = {
 export const leadsApi = {
   list: (params?: any) => api.get("/leads", { params }).then((r) => r.data),
   exportCsv: (params?: any) =>
-    api.get("/leads/export", { params, responseType: "blob" }),
+    api.get("/leads/export", { params, responseType: "blob" }).then((r) => r.data),
   delete: (id: string) => api.delete(`/leads/${id}`),
 };
 

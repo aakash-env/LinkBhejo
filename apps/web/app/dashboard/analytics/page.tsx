@@ -38,7 +38,7 @@ export default function AnalyticsPage() {
 
   const { data: byAutomation } = useQuery({
     queryKey: ["analytics", "automations"],
-    queryFn: analyticsApi.automations,
+    queryFn: () => analyticsApi.automations(),
   });
 
   const funnelData = [

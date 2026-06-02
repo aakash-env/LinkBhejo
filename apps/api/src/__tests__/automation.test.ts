@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { matchesKeyword } from "../src/services/automation";
+import { matchesKeyword } from "../services/automation";
 
 // ─────────────────────────────────────────
 // Automation Engine Tests

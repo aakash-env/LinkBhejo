@@ -18,7 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LinkBhejoLogo } from "./AuthLeftPanel"; // Or just inline it
+
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
