@@ -1,0 +1,19 @@
+{
+  "name": "@linkbhejo/utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./crypto": "./src/crypto.ts",
+    "./rate-limit": "./src/rate-limit.ts",
+    "./meta-signature": "./src/meta-signature.ts"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/node": "^20.14.0"
+  }
+}

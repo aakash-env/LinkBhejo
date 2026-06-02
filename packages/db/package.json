@@ -1,0 +1,27 @@
+{
+  "name": "@linkbhejo/db",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prisma": "prisma",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "migrate": "prisma migrate dev",
+    "studio": "prisma studio",
+    "seed": "tsx seed.ts",
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.15.0",
+    "prisma": "^5.15.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.15.7"
+  }
+}
