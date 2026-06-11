@@ -77,7 +77,7 @@ export async function billingRoutes(app: FastifyInstance) {
       return reply.status(404).send({ success: false, error: "User not found" });
     }
 
-    let subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscription.findUnique({
       where: { userId },
     });
 

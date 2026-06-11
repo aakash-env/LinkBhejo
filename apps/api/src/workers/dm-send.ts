@@ -1,6 +1,6 @@
 import { Worker, type Job } from "bullmq";
 import { Redis } from "ioredis";
-import { prisma, encryptToken } from "@linkbhejo/db";
+import { prisma } from "@linkbhejo/db";
 import type { DmSendJobPayload } from "@linkbhejo/types";
 import { MetaClient, MetaRateLimitError, MetaBadRequestError } from "../services/meta";
 import { generateAiReply, buildAutomationSystemPrompt } from "../services/ai";
