@@ -42,7 +42,7 @@ export function Sidebar() {
         <div className="flex items-center justify-center">
           <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="2" y="2" width="44" height="44" rx="10" stroke="#00e599" strokeWidth="2" />
-            <path d="M16 14V34H32" stroke="#00e599" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M16 14V34H32" stroke="#00e599" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <span className="text-xl font-syne font-bold text-white tracking-tight">LinkBhejo</span>

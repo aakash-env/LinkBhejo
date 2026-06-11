@@ -43,6 +43,7 @@ export function HoverBorderGradient({
 
   const highlight = "radial-gradient(75% 181.159% at 50% 50%, var(--accent-primary) 0%, rgba(255, 255, 255, 0) 100%)";
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!hovered) {
       const interval = setInterval(() => {
