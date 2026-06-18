@@ -7,7 +7,10 @@ import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 import { SignJWT } from "jose";
 
-const JWT_SECRET = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "linkbhejo-secret";
+const JWT_SECRET = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("FATAL: AUTH_SECRET environment variable is not set. Refusing to start.");
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
