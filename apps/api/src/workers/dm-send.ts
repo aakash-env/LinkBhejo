@@ -77,20 +77,33 @@ export function startDmSendWorker(redis: Redis) {
         where: { id: automationId },
       });
 
-      // 4. Generate AI reply if enabled and no fixed template (or as override)
+      // 4. Generate AI reply if enabled — enforce per-account hourly budget
       let finalMessage = messageText;
       if (automation?.aiEnabled && automation.aiSystemPrompt) {
-        try {
-          const systemPrompt = buildAutomationSystemPrompt({
-            brandVoice: automation.aiBrandVoice ?? undefined,
-            automationGoal: automation.aiSystemPrompt,
-          });
-          finalMessage = await generateAiReply(systemPrompt, messageText);
-        } catch (err) {
-          logger.warn("AI reply failed, using template", {
-            error: (err as Error).message,
-          });
-          finalMessage = messageText; // Fallback to template
+        // Sliding-window: max 50 AI calls per account per hour
+        const aiRlKey = `ai_rl:${accountId}`;
+        const aiCallCount = await redis.incr(aiRlKey);
+        if (aiCallCount === 1) {
+          // First call in this window — set 1-hour TTL
+          await redis.expire(aiRlKey, 3600);
+        }
+
+        if (aiCallCount > 50) {
+          logger.warn("AI rate limit exceeded — using template", { accountId, aiCallCount });
+          finalMessage = messageText;
+        } else {
+          try {
+            const systemPrompt = buildAutomationSystemPrompt({
+              brandVoice: automation.aiBrandVoice ?? undefined,
+              automationGoal: automation.aiSystemPrompt,
+            });
+            finalMessage = await generateAiReply(systemPrompt, messageText);
+          } catch (err) {
+            logger.warn("AI reply failed, using template", {
+              error: (err as Error).message,
+            });
+            finalMessage = messageText; // Graceful fallback
+          }
         }
       }
 
