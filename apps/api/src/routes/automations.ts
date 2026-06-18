@@ -108,7 +108,6 @@ export async function automationRoutes(app: FastifyInstance) {
   app.patch<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const { accountId } = (req as any).user;
     const { id } = req.params;
-    const body = req.body as any;
 
     const existing = await prisma.automation.findFirst({
       where: { id, accountId, deletedAt: null },
@@ -118,16 +117,37 @@ export async function automationRoutes(app: FastifyInstance) {
       return reply.status(404).send({ success: false, error: "Automation not found" });
     }
 
-    const { keywords, ...updateData } = body;
+    // Validate update body against a partial version of createAutomationSchema.
+    // Never let the client set accountId, id, deletedAt, or other internal fields.
+    const updateSchema = createAutomationSchema.partial();
+    const parsed = updateSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return reply.status(400).send({
+        success: false,
+        error: "Validation failed",
+        details: parsed.error.flatten(),
+      });
+    }
+
+    const { keywords, ...updateData } = parsed.data;
+
+    // Explicitly strip protected fields — defence-in-depth
+    const safeUpdate = (({ ...rest }) => rest)(updateData) as Record<string, unknown>;
+    delete safeUpdate["accountId"];
+    delete safeUpdate["id"];
+    delete safeUpdate["deletedAt"];
+    delete safeUpdate["createdAt"];
+    delete safeUpdate["updatedAt"];
 
     const automation = await prisma.automation.update({
       where: { id },
       data: {
-        ...updateData,
-        ...(keywords && {
+        ...safeUpdate,
+        ...(keywords !== undefined && {
           rules: {
             deleteMany: {},
-            create: keywords.map((k: any) => ({
+            create: keywords.map((k) => ({
               keyword: k.keyword.toLowerCase(),
               matchType: k.matchType ?? "CONTAINS",
               caseSensitive: false,
