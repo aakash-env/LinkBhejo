@@ -2,7 +2,11 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import { logger } from "../logger";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "linkbhejo-secret";
+const _JWT_SECRET = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+if (!_JWT_SECRET) {
+  throw new Error("FATAL: AUTH_SECRET environment variable is not set. Refusing to start.");
+}
+const JWT_SECRET = _JWT_SECRET;
 
 /**
  * Auth middleware — validates NextAuth JWT from Authorization header.
