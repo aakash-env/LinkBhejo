@@ -12,6 +12,7 @@ import { accountRoutes } from "./routes/accounts";
 import { leadRoutes } from "./routes/leads";
 import { analyticsRoutes } from "./routes/analytics";
 import { billingRoutes } from "./routes/billing";
+import { authRoutes } from "./routes/auth";
 import { authMiddleware } from "./middleware/auth";
 
 // ─────────────────────────────────────────
@@ -77,6 +78,9 @@ async function bootstrap() {
 
     // Webhooks — no auth (Meta signs the request)
     await app.register(webhookRoutes, { prefix: "/webhooks" });
+
+    // Public auth routes — no JWT required
+    await app.register(authRoutes, { prefix: "/auth" });
 
     // Protected routes — require JWT
     await app.register(async (protectedApp) => {
