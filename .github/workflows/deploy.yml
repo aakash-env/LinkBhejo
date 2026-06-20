@@ -1,0 +1,131 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECS_CLUSTER: linkbhejo-prod
+
+jobs:
+  deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # For OIDC (optional, preferred over static keys)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ─── Build & Push: Web ──────────────────────────────────────────────────
+      - name: Build and push web image
+        id: build-web
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/linkbhejo/web:$IMAGE_TAG \
+            -t $ECR_REGISTRY/linkbhejo/web:latest \
+            -f apps/web/Dockerfile \
+            .
+          docker push $ECR_REGISTRY/linkbhejo/web:$IMAGE_TAG
+          docker push $ECR_REGISTRY/linkbhejo/web:latest
+          echo "image=$ECR_REGISTRY/linkbhejo/web:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # ─── Build & Push: API ──────────────────────────────────────────────────
+      - name: Build and push api image
+        id: build-api
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/linkbhejo/api:$IMAGE_TAG \
+            -t $ECR_REGISTRY/linkbhejo/api:latest \
+            -f apps/api/Dockerfile \
+            .
+          docker push $ECR_REGISTRY/linkbhejo/api:$IMAGE_TAG
+          docker push $ECR_REGISTRY/linkbhejo/api:latest
+          echo "image=$ECR_REGISTRY/linkbhejo/api:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # ─── Build & Push: Worker ───────────────────────────────────────────────
+      - name: Build and push worker image
+        id: build-worker
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/linkbhejo/worker:$IMAGE_TAG \
+            -t $ECR_REGISTRY/linkbhejo/worker:latest \
+            -f apps/api/Dockerfile.worker \
+            .
+          docker push $ECR_REGISTRY/linkbhejo/worker:$IMAGE_TAG
+          docker push $ECR_REGISTRY/linkbhejo/worker:latest
+          echo "image=$ECR_REGISTRY/linkbhejo/worker:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # ─── Run DB Migrations ──────────────────────────────────────────────────
+      - name: Run database migrations via ECS task
+        run: |
+          aws ecs run-task \
+            --cluster $ECS_CLUSTER \
+            --task-definition linkbhejo-migrate \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PRIVATE_SUBNET_IDS }}],securityGroups=[${{ secrets.ECS_SECURITY_GROUP_ID }}],assignPublicIp=DISABLED}" \
+            --overrides '{"containerOverrides":[{"name":"migrate","command":["pnpm","db:migrate:deploy"]}]}' \
+            --wait-until-stopped
+
+      # ─── Update ECS Services ────────────────────────────────────────────────
+      - name: Deploy web to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service linkbhejo-web \
+            --force-new-deployment
+
+      - name: Deploy api to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service linkbhejo-api \
+            --force-new-deployment
+
+      - name: Deploy worker to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service linkbhejo-worker \
+            --force-new-deployment
+
+      # ─── Wait for rollout ───────────────────────────────────────────────────
+      - name: Wait for web service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services linkbhejo-web
+
+      - name: Wait for api service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services linkbhejo-api
+
+      - name: Deployment complete
+        run: |
+          echo "✅ LinkBhejo deployed to production!"
+          echo "Web: https://linkbhejo.com"
+          echo "API: https://api.linkbhejo.com"
+          echo "Commit: ${{ github.sha }}"
