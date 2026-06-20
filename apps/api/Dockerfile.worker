@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1.6
+# Worker image — same build as API, different entrypoint
+FROM node:20-alpine AS base
+RUN corepack enable pnpm
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/db/package.json ./packages/db/
+COPY packages/types/package.json ./packages/types/
+COPY packages/utils/package.json ./packages/utils/
+RUN pnpm install --frozen-lockfile
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY . .
+RUN pnpm --filter @linkbhejo/db prisma generate
+RUN pnpm --filter @linkbhejo/api build
+
+FROM node:20-alpine AS runner
+RUN corepack enable pnpm
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 linkbhejo
+
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/db/prisma ./prisma
+
+USER linkbhejo
+
+# Workers don't expose HTTP — they just consume from the queue
+CMD ["node", "dist/workers/index.js"]
