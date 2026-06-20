@@ -1,0 +1,36 @@
+{
+  "family": "linkbhejo-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/linkbhejo-task-role",
+  "containerDefinitions": [
+    {
+      "name": "worker",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/linkbhejo/worker:latest",
+      "essential": true,
+      "secrets": [
+        { "name": "AUTH_SECRET",               "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/AUTH_SECRET" },
+        { "name": "DATABASE_URL",              "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/DATABASE_URL" },
+        { "name": "REDIS_URL",                 "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/REDIS_URL" },
+        { "name": "ANTHROPIC_API_KEY",         "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/ANTHROPIC_API_KEY" },
+        { "name": "META_WEBHOOK_VERIFY_TOKEN", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/META_WEBHOOK_VERIFY_TOKEN" },
+        { "name": "META_WEBHOOK_SECRET",       "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/META_WEBHOOK_SECRET" },
+        { "name": "ENCRYPTION_KEY",            "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/ENCRYPTION_KEY" }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/linkbhejo-worker",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "worker"
+        }
+      }
+    }
+  ]
+}

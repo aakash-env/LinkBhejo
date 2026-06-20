@@ -1,0 +1,50 @@
+{
+  "family": "linkbhejo-web",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/linkbhejo-task-role",
+  "containerDefinitions": [
+    {
+      "name": "web",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/linkbhejo/web:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "secrets": [
+        { "name": "AUTH_SECRET",          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/AUTH_SECRET" },
+        { "name": "DATABASE_URL",         "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/DATABASE_URL" },
+        { "name": "GOOGLE_CLIENT_ID",     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/GOOGLE_CLIENT_ID" },
+        { "name": "GOOGLE_CLIENT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/GOOGLE_CLIENT_SECRET" },
+        { "name": "META_APP_ID",          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/META_APP_ID" },
+        { "name": "META_APP_SECRET",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/META_APP_SECRET" }
+      ],
+      "environment": [
+        { "name": "NODE_ENV",             "value": "production" },
+        { "name": "NEXTAUTH_URL",         "value": "https://linkbhejo.com" },
+        { "name": "NEXT_PUBLIC_API_URL",  "value": "https://api.linkbhejo.com" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/linkbhejo-web",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "web"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
