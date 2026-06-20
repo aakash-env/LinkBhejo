@@ -76,8 +76,18 @@ async function bootstrap() {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file uploads
     });
 
+    // Health check — used by ECS ALB and Docker HEALTHCHECK
+    app.get("/health", async (_req, reply) => {
+      return reply.status(200).send({
+        status: "ok",
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+      });
+    });
+
     // Webhooks — no auth (Meta signs the request)
     await app.register(webhookRoutes, { prefix: "/webhooks" });
+
 
     // Public auth routes — no JWT required
     await app.register(authRoutes, { prefix: "/auth" });
