@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_call:   # allows deploy.yml to use this as a prerequisite
+
 
 env:
   NODE_VERSION: "20"
