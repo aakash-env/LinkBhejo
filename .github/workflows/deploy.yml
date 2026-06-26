@@ -4,13 +4,12 @@ on:
   push:
     branches: [main]
 
-# Top-level env cannot use secrets — only non-secret values here
 env:
   AWS_REGION: us-east-1
   ECS_CLUSTER: linkbhejo-prod
 
 jobs:
-  # ─── Run CI first — never deploy broken code ──────────────────────────────
+  # ─── CI must pass before any deploy ────────────────────────────────────────
   ci:
     name: Lint, Type-check & Test
     uses: ./.github/workflows/ci.yml
@@ -18,7 +17,7 @@ jobs:
   deploy:
     name: Build, Push & Deploy
     runs-on: ubuntu-latest
-    needs: [ci]   # <── only runs if CI passes
+    needs: [ci]
     permissions:
       contents: read
       id-token: write
@@ -27,6 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ─── AWS Auth ────────────────────────────────────────────────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -34,20 +34,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # ecr-login outputs: registry = "123456789.dkr.ecr.us-east-1.amazonaws.com"
+      # Use steps.ecr-login.outputs.registry — no custom step needed
       - name: Login to Amazon ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ECR registry built at step level so the secret is available
-      - name: Set ECR registry
-        id: ecr
-        run: echo "registry=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
+      # Ensure ECR repos exist — idempotent, safe to run every deploy
+      - name: Create ECR repositories if not exists
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+        run: |
+          for repo in linkbhejo/web linkbhejo/api linkbhejo/worker; do
+            aws ecr describe-repositories --repository-names "$repo" 2>/dev/null || \
+            aws ecr create-repository --repository-name "$repo" \
+              --image-scanning-configuration scanOnPush=true \
+              --encryption-configuration encryptionType=AES256
+            echo "✅ Repo ready: $repo"
+          done
 
-      # ─── Build & Push: Web ──────────────────────────────────────────────────
+      # ─── Build & Push: Web ───────────────────────────────────────────────────
       - name: Build and push web image
         id: build-web
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build \
@@ -59,11 +69,11 @@ jobs:
           docker push $REGISTRY/linkbhejo/web:latest
           echo "image=$REGISTRY/linkbhejo/web:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # ─── Build & Push: API ──────────────────────────────────────────────────
+      # ─── Build & Push: API ───────────────────────────────────────────────────
       - name: Build and push api image
         id: build-api
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build \
@@ -75,11 +85,11 @@ jobs:
           docker push $REGISTRY/linkbhejo/api:latest
           echo "image=$REGISTRY/linkbhejo/api:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # ─── Build & Push: Worker ───────────────────────────────────────────────
+      # ─── Build & Push: Worker ────────────────────────────────────────────────
       - name: Build and push worker image
         id: build-worker
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build \
@@ -91,9 +101,9 @@ jobs:
           docker push $REGISTRY/linkbhejo/worker:latest
           echo "image=$REGISTRY/linkbhejo/worker:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # ─── Run DB Migrations ──────────────────────────────────────────────────
-      # Correct pattern: run-task → capture ARN → wait tasks-stopped → check exit code
-      - name: Run database migrations via ECS task
+      # ─── DB Migrations ───────────────────────────────────────────────────────
+      # run-task → capture ARN → wait tasks-stopped → assert exit code = 0
+      - name: Run database migrations
         run: |
           TASK_ARN=$(aws ecs run-task \
             --cluster $ECS_CLUSTER \
@@ -104,14 +114,12 @@ jobs:
             --query 'tasks[0].taskArn' \
             --output text)
 
-          echo "Migration task ARN: $TASK_ARN"
+          echo "Migration task: $TASK_ARN"
 
-          # Wait for the task to finish (up to 10 minutes)
           aws ecs wait tasks-stopped \
             --cluster $ECS_CLUSTER \
             --tasks "$TASK_ARN"
 
-          # Check the exit code — fail the deploy if migration failed
           EXIT_CODE=$(aws ecs describe-tasks \
             --cluster $ECS_CLUSTER \
             --tasks "$TASK_ARN" \
@@ -119,14 +127,13 @@ jobs:
             --output text)
 
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "❌ Migration failed with exit code $EXIT_CODE"
+            echo "❌ Migration failed (exit $EXIT_CODE)"
             exit 1
           fi
-          echo "✅ Migrations completed successfully"
+          echo "✅ Migrations done"
 
-      # ─── Update Task Definitions with new image tags ────────────────────────
-      # force-new-deployment alone reuses the OLD image — must update task def first
-      - name: Update web task definition with new image
+      # ─── Update task definitions with new image tags ──────────────────────────
+      - name: Render web task definition
         id: web-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -134,7 +141,7 @@ jobs:
           container-name: web
           image: ${{ steps.build-web.outputs.image }}
 
-      - name: Update api task definition with new image
+      - name: Render api task definition
         id: api-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -142,7 +149,7 @@ jobs:
           container-name: api
           image: ${{ steps.build-api.outputs.image }}
 
-      - name: Update worker task definition with new image
+      - name: Render worker task definition
         id: worker-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -150,8 +157,8 @@ jobs:
           container-name: worker
           image: ${{ steps.build-worker.outputs.image }}
 
-      # ─── Deploy updated task definitions to ECS ─────────────────────────────
-      - name: Deploy web to ECS
+      # ─── Deploy to ECS (registers new task def revision + updates service) ───
+      - name: Deploy web
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.web-task-def.outputs.task-definition }}
@@ -159,7 +166,7 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
 
-      - name: Deploy api to ECS
+      - name: Deploy api
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.api-task-def.outputs.task-definition }}
@@ -167,7 +174,7 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
 
-      - name: Deploy worker to ECS
+      - name: Deploy worker
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.worker-task-def.outputs.task-definition }}
@@ -175,9 +182,9 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
 
-      - name: Deployment complete
+      - name: Done
         run: |
-          echo "✅ LinkBhejo deployed to production!"
-          echo "Commit: ${{ github.sha }}"
-          echo "Web image: ${{ steps.build-web.outputs.image }}"
-          echo "API image: ${{ steps.build-api.outputs.image }}"
+          echo "✅ Deployed commit ${{ github.sha }}"
+          echo "Web:    ${{ steps.build-web.outputs.image }}"
+          echo "API:    ${{ steps.build-api.outputs.image }}"
+          echo "Worker: ${{ steps.build-worker.outputs.image }}"
