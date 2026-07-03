@@ -1,10 +1,7 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 
-const { auth } = NextAuth({
-  ...authConfig,
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-});
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   // Basic Security & Probing Logging

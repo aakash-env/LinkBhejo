@@ -188,10 +188,13 @@ export default function LandingPage() {
   const [pricingInterval, setPricingInterval] = useState<"monthly" | "annual">("monthly");
 
   useEffect(() => {
-    return scrollY.onChange((latest) => {
+    // scrollY.onChange is deprecated in Framer Motion v11 — use .on() instead
+    const unsubscribe = scrollY.on("change", (latest) => {
       setIsScrolled(latest > 60);
     });
+    return unsubscribe;
   }, [scrollY]);
+
 
   return (
     <div className="theme-luxury min-h-screen relative overflow-x-hidden selection:bg-[var(--accent-primary)]/30 selection:text-white">

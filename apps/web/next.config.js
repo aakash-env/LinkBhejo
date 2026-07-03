@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  // Expose server-only env vars to the Edge middleware runtime
+  env: {
+    AUTH_SECRET: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "",
+  },
+
   experimental: {
     serverComponentsExternalPackages: ["@prisma/client"],
   },
