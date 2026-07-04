@@ -96,7 +96,7 @@ export function Sidebar() {
           Notifications
         </button>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: "/" })}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#7a9490] hover:text-white hover:bg-[#131c1b] w-full transition-all group"
         >
           <LogOut className="w-4 h-4 group-hover:text-white transition-colors" />
