@@ -30,6 +30,8 @@ RUN pnpm db:generate
 ENV NEXT_TELEMETRY_DISABLED=1
 # Enable standalone output — this only works on Linux (symlinks). Never set this locally on Windows.
 ENV DOCKER_BUILD=true
+# NextAuth requires AUTH_SECRET at build time during static page compilation/evaluation
+ENV AUTH_SECRET="build_placeholder"
 RUN pnpm --filter @linkbhejo/web build
 
 # ─── runner ──────────────────────────────────────────────────────────────────
