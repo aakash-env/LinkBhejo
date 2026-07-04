@@ -28,7 +28,7 @@ if (process.env.NODE_ENV !== "production") {
 // ─────────────────────────────────────────
 
 export function applyTenantMiddleware(accountId: string) {
-  prisma.$use(async (params, next) => {
+  prisma.$use(async (params: any, next: any) => {
     // Tables that require tenant isolation
     const tenantTables = [
       "Automation",
