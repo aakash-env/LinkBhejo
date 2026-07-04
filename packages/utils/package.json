@@ -10,10 +10,10 @@
     "./meta-signature": "./src/meta-signature.ts"
   },
   "dependencies": {
-    "ioredis": "^5.4.1"
+    "ioredis": "^5.11.1"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/node": "^20.14.0"
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
   }
 }
