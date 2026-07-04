@@ -31,7 +31,7 @@ let webhookEventsQueue: Queue;
 
 function getQueueOptions(redis: Redis) {
   return {
-    connection: redis,
+    connection: redis as any,
     defaultJobOptions: {
       attempts: 3,
       backoff: {
