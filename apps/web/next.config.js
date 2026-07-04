@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // "standalone" requires symlink support — works on Linux (Docker/CI) but
+  // fails on Windows without Developer Mode. Only enable it in Docker builds.
+  ...(process.env.DOCKER_BUILD === "true" && { output: "standalone" }),
+
   // Expose server-only env vars to the Edge middleware runtime
   env: {
     AUTH_SECRET: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "",

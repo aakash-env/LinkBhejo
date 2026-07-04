@@ -25,6 +25,8 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN pnpm db:generate
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# Enable standalone output — this only works on Linux (symlinks). Never set this locally on Windows.
+ENV DOCKER_BUILD=true
 RUN pnpm --filter @linkbhejo/web build
 
 # ─── runner ──────────────────────────────────────────────────────────────────
