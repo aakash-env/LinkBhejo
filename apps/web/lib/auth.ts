@@ -15,40 +15,39 @@ if (!JWT_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: {
-    ...authConfig.callbacks,
     async jwt({ token, user, account, trigger, session }) {
-      // Call original jwt callback if exists
-      let newToken = token;
+      // 1. Run the base config callback first — this sets token.id, token.role etc.
+      let newToken = { ...token };
       if (authConfig.callbacks?.jwt) {
-        newToken = await (authConfig.callbacks.jwt as any)({ token, user, account, trigger, session });
+        newToken = await (authConfig.callbacks.jwt as any)({ token: newToken, user, account, trigger, session });
       }
 
-      // Generate a standard JWT for the Fastify API using jose
-      if (!newToken.apiToken) {
-        const secret = new TextEncoder().encode(JWT_SECRET);
+      // 2. Generate API JWT — only when we have a user id and don't already have one
+      const userId = (newToken.id ?? user?.id) as string | undefined;
+      if (userId && !newToken.apiToken) {
+        const secret = new TextEncoder().encode(JWT_SECRET!);
         newToken.apiToken = await new SignJWT({
-          sub: newToken.id as string,
-          email: newToken.email as string,
-          role: newToken.role as string
+          sub: userId,
+          email: (newToken.email ?? user?.email) as string,
+          role: (newToken.role ?? "OWNER") as string,
         })
-          .setProtectedHeader({ alg: 'HS256' })
+          .setProtectedHeader({ alg: "HS256" })
           .setIssuedAt()
-          .setExpirationTime('7d')
+          .setExpirationTime("7d")
           .sign(secret);
       }
       return newToken;
     },
     async session({ session, token, user }) {
-      // Call original session callback if exists
       let newSession = session;
       if (authConfig.callbacks?.session) {
         newSession = await (authConfig.callbacks.session as any)({ session, token, user });
       }
-      // Pass the standard JWT down to the client session
       (newSession as any).accessToken = token.apiToken;
       return newSession;
-    }
+    },
   },
+
   providers: [
     // ─────────────────────────────────────
     // Google OAuth
