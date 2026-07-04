@@ -1,0 +1,30 @@
+{
+  "family": "linkbhejo-migrate",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/linkbhejo-task-role",
+  "containerDefinitions": [
+    {
+      "name": "migrate",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/linkbhejo/api:latest",
+      "essential": true,
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:/linkbhejo/prod/DATABASE_URL" }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/linkbhejo-migrate",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "migrate"
+        }
+      }
+    }
+  ]
+}
