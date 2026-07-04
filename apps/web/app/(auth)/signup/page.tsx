@@ -52,18 +52,19 @@ export default function SignupPage() {
     setIsLoading(true);
     setServerError(null);
     try {
-      // Call API to register the user
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/auth/register`, {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: data.name, email: data.email, password: data.password }),
       });
 
-      const json = await res.json();
+      let json: any = {};
+      try { json = await res.json(); } catch { /* non-JSON body */ }
 
       if (!res.ok) {
-        setServerError(json.error ?? "Registration failed. Please try again.");
-        toast.error(json.error ?? "Registration failed");
+        const msg = json.error ?? `Registration failed (${res.status})`;
+        setServerError(msg);
+        toast.error(msg);
         return;
       }
 
@@ -81,13 +82,18 @@ export default function SignupPage() {
         toast.success("Welcome to LinkBhejo! 🎉");
         router.push("/dashboard");
       }
-    } catch {
-      setServerError("Something went wrong. Please try again.");
-      toast.error("Something went wrong. Please try again.");
+    } catch (err: any) {
+      const msg = err?.message?.includes("fetch")
+        ? "Cannot reach the server. Make sure the API is running."
+        : (err?.message ?? "Something went wrong. Please try again.");
+      console.error("[Signup] Error:", err);
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   }
+
 
   return (
     <div className="flex min-h-screen w-full overflow-hidden bg-[#080c0c] text-white selection:bg-[#00e599]/30 font-dm-sans">
