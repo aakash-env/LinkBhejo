@@ -201,20 +201,22 @@ export default function LoginPage() {
             <p className="text-[#7a9490] text-sm">Welcome back! Please enter your details.</p>
           </div>
 
-          {/* Social Auth Buttons */}
-          <div className="flex flex-col gap-3 mb-8">
+          {/* Social Auth — compact icon buttons */}
+          <div className="flex items-center justify-center gap-4 mb-8">
             {/* Instagram */}
             <button
               onClick={handleInstagramSignIn}
               type="button"
               disabled={igLoading}
-              className="relative flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-[#131c1b] border border-[#1e3030] hover:bg-[#1a2826] hover:border-[#2a4040] transition-all duration-200 outline-none group disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Continue with Instagram"
+              className="group relative flex items-center justify-center w-12 h-12 rounded-xl bg-[#131c1b] border border-[#1e3030] hover:border-[#e1306c]/50 hover:bg-[#1a1014] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {igLoading
                 ? <Loader2 className="w-5 h-5 text-white animate-spin" />
-                : <Instagram className="w-5 h-5 text-white" />
+                : <Instagram className="w-5 h-5 text-[#e1306c]" />
               }
-              <span className="text-sm font-medium text-white">
+              {/* Tooltip */}
+              <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0d1111] border border-[#1e3030] px-2 py-1 text-[11px] text-[#7a9490] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
                 {igLoading ? "Connecting..." : "Continue with Instagram"}
               </span>
             </button>
@@ -224,7 +226,8 @@ export default function LoginPage() {
               onClick={handleGoogleSignIn}
               type="button"
               disabled={googleLoading}
-              className="relative flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-[#131c1b] border border-[#1e3030] hover:bg-[#1a2826] hover:border-[#2a4040] transition-all duration-200 outline-none group disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Continue with Google"
+              className="group relative flex items-center justify-center w-12 h-12 rounded-xl bg-[#131c1b] border border-[#1e3030] hover:border-[#4285F4]/50 hover:bg-[#10131c] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {googleLoading
                 ? <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -237,11 +240,13 @@ export default function LoginPage() {
                   </svg>
                 )
               }
-              <span className="text-sm font-medium text-white">
+              {/* Tooltip */}
+              <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0d1111] border border-[#1e3030] px-2 py-1 text-[11px] text-[#7a9490] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
                 {googleLoading ? "Connecting..." : "Continue with Google"}
               </span>
             </button>
           </div>
+
 
           {/* Divider */}
           <div className="flex items-center justify-between w-full mb-8">
