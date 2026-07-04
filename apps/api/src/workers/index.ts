@@ -43,7 +43,7 @@ export function startWebhookEventsWorker(redis: Redis) {
           logger.warn("Unknown webhook event type", { type });
       }
     },
-    { connection: redis, concurrency: 10 }
+    { connection: redis as any, concurrency: 10 }
   );
 
   worker.on("failed", (job, err) => {

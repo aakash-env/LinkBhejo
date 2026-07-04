@@ -98,7 +98,7 @@ export function startSequenceStepWorker(redis: Redis) {
         });
       }
     },
-    { connection: redis, concurrency: 3 }
+    { connection: redis as any, concurrency: 3 }
   );
 
   worker.on("failed", (job, err) => {

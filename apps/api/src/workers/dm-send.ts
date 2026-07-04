@@ -152,7 +152,7 @@ export function startDmSendWorker(redis: Redis) {
       logger.info("DM sent successfully", { automationId, igUserId, messageId });
     },
     {
-      connection: redis,
+      connection: redis as any,
       concurrency: 5,
     }
   );

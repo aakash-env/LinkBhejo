@@ -82,7 +82,7 @@ export function startRetriggerBatchWorker(redis: Redis) {
         });
       }
     },
-    { connection: redis, concurrency: 2 } // Lower concurrency for batch
+    { connection: redis as any, concurrency: 2 } // Lower concurrency for batch
   );
 
   worker.on("failed", (job, err) => {

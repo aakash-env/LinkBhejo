@@ -18,7 +18,7 @@ export function startCommentReplyWorker(redis: Redis) {
 
       logger.info("Comment reply posted", { mediaId, commentId });
     },
-    { connection: redis, concurrency: 5 }
+    { connection: redis as any, concurrency: 5 }
   );
 
   worker.on("failed", (job, err) => {
