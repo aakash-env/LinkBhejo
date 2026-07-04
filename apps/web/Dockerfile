@@ -34,6 +34,9 @@ ENV DOCKER_BUILD=true
 ENV AUTH_SECRET="build_placeholder"
 RUN pnpm --filter @linkbhejo/web build
 
+# Ensure public directory exists for runner stage
+RUN mkdir -p /app/apps/web/public
+
 # ─── runner ──────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
